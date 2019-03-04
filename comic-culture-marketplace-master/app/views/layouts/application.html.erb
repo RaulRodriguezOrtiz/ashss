@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Comic Culture Marketplace</title>
+    <%= csrf_meta_tags %>
+
+    <!-- Google Fonts -->
+    <!-- <link href="https://fonts.googleapis.com/css?family=Bangers|Oswald:400,700" rel="stylesheet"> -->
+    <!-- <link href="https://fonts.googleapis.com/css?family=Bangers|Oswald:300,400,700" rel="stylesheet"> -->
+    <link href="https://fonts.googleapis.com/css?family=Bangers|PT+Sans:400,700" rel="stylesheet">    
+    
+    <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+    <%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
+  </head>
+
+  <body>
+    <div class="container-fluid">
+
+        <!-- d-flex flex-wrap align-items-center -->
+      <section class="header navbar justify-content-lg-between justify-content-center search-bar">  
+        <a class="navbar-brand" href="<%= root_path %>">
+          <%= image_tag asset_path('logo.svg'), height: 120 %>
+        </a>
+        <%= form_with(url: search_index_path, method: 'get', local: true, class: 'form-inline') do |form| %>
+          <%= form.text_field :keywords, id: :keywords, value: @keywords, placeholder: 'What are you looking for?' %>
+          <% current_location = search_location %>
+          <%= form.text_field :location, id: :location, value: @location.blank? ? current_location : @location, placeholder: 'Location' %>
+          <%= form.select :location_radius, location_radius.map{|location_radius| [location_radius[0].titleize, location_radius[1]]}, selected: @location_radius %>
+          <%= form.submit 'Search' %>
+          <%#= link_to 'Advanced Search', search_index_path %>
+        <% end %>
+      </section>
+      
+      <section class="primary-navigation">
+        <nav class="navbar navbar-expand">
+          <ul class="navbar-nav navbar-left justify-content-start align-items-center justify-content-center">
+            <li class="nav-item">
+              <a href="<%= root_path %>" class="nav-link d-flex align-items-center"><div class="primary-nav-icon-home"></div></a>
+            </li>
+            <li class="nav-item nav-item-category">
+              <%= link_to 'Shop by Category', '#', class: 'nav-link category-dropdown d-flex align-items-center' %>
+              <div class="category-dropdown-content">
+                <a href="<%= product_books_path %>" class="nav-link d-flex align-items-center justify-content-start"><%= html_escape('Comic Books & Graphic Novels') %></a>
+                <a href="<%= product_toys_path %>" class="nav-link d-flex align-items-center justify-content-start"><%= html_escape('Toys & Collectibles') %></a>
+                <a href="<%= product_costumes_path %>" class="nav-link d-flex align-items-center justify-content-start"><%= html_escape('Costumes') %></a>
+                <a href="<%= product_apparel_path %>" class="nav-link d-flex align-items-center justify-content-start"><%= html_escape('Clothing & Apparel') %></a>
+              </div>
+            </li>
+            <li class="nav-item"><%= link_to 'Watchlist', watchlists_path, class: 'nav-link d-flex align-items-center' %></li>
+          </ul>
+          <ul class="navbar-nav navbar-right justify-content-end align-items-center">
+            <% if user_signed_in? and current_user.profile.present? %>
+            <li class="nav-item">
+              <a href="<%= profile_path(current_user.profile) if user_signed_in? and current_user.profile.present? %>" class="nav-link d-flex flex-wrap align-items-center">
+                <div class="primary-nav-icon primary-nav-icon-profile p-2"></div>
+                <div class="p-2 primary-nav-label d-flex align-items-center justify-content-center">Profile</div>
+              </a>
+            </li>
+            
+            <li class="nav-item">
+              <a href="<%= conversations_path %>" class="nav-link d-flex flex-wrap align-items-center">
+                <div class="primary-nav-icon primary-nav-icon-messages p-2"></div>
+                <div class="p-2 primary-nav-label d-flex align-items-center justify-content-center">Messages</div>
+              </a>
+            </li>
+            
+            <li class="nav-item">
+              <a href="<%= shopping_carts_path %>" class="nav-link d-flex flex-wrap align-items-center">
+                <div class="primary-nav-icon primary-nav-icon-shopping-cart p-2"></div>
+                <div class="p-2 primary-nav-label d-flex align-items-center justify-content-center"><%= shopping_cart_label %></div>
+              </a>
+            </li>
+            <% end %>
+
+            <li class="nav-item">
+              <% if user_signed_in? %>
+                <%= link_to 'Sign out', destroy_user_session_path, method: :delete, class: 'nav-link d-flex align-items-center justify-content-center' %>
+              <% else %>
+                <%= link_to 'Sign in', new_user_session_path, class: 'nav-link d-flex align-items-center justify-content-center' %>  
+              <% end %>
+            </li>
+          </ul>
+        </nav>
+      </section>
+
+      <nav class="mobile-navigation nav nav-pills nav-justified fixed-bottom align-items-center">
+        <a href="#" class="nav-item nav-link hamburger-link"><%= image_tag asset_path('hamburger.svg') %></a>
+        <a href="<%= search_index_path %>" class="nav-item nav-link"><%= image_tag asset_path('search.svg') %></a>
+        <% if user_signed_in? %>
+          <a href="<%= profile_path(current_user.profile) if current_user.profile.present? %>" class="nav-item nav-link"><%= image_tag asset_path('profile.svg') %></a>
+        <% else %>
+          <a href="<%= new_user_session_path %>" class="nav-item nav-link"><%= image_tag asset_path('profile.svg') %></a>
+        <% end %>
+        <a href="<%= conversations_path %>" class="nav-item nav-link"><%= image_tag asset_path('message.svg') %></a>
+        <a href="<%= shopping_carts_path %>" class="nav-item nav-link"><%= image_tag asset_path('shopping_cart.svg') %></a>
+      </nav>
+
+      <section id="mobile-menu" class="mobile-menu">
+        <div class="d-flex flex-column">
+          <div class="close-row p-2 d-flex justify-content-end">
+            <div class="close-button">
+              <i class="fa fa-times" aria-hidden="true"></i>
+            </div>
+          </div>
+          <ul class="mobile-menu-items row p-2">
+            <li class="mobile-menu-item col-12 d-flex align-items-center">
+              <%= link_to 'Home', root_path %>
+            </li>
+            <li class="mobile-menu-item col-12 d-flex align-items-center">
+              <a href="<%= product_books_path %>"><%= html_escape('Comic Books & Graphic Novels') %></a>
+            </li>
+            <li class="mobile-menu-item col-12 d-flex align-items-center">
+              <a href="<%= product_toys_path %>"><%= html_escape('Toys & Collectibles') %></a>
+            </li>
+            <li class="mobile-menu-item col-12 d-flex align-items-center">
+              <a href="<%= product_costumes_path %>">Costumes</a>
+            </li>
+            <li class="mobile-menu-item col-12 d-flex align-items-center">
+              <a href="<%= product_apparel_path %>"><%= html_escape('Clothing & Apparel') %></a>
+            </li>
+            <li class="mobile-menu-item col-12 d-flex align-items-center">
+              <%= link_to 'Watchlist', watchlists_path %>
+            </li>
+            <li class="mobile-menu-item col-12 d-flex align-items-center">
+              <%= link_to 'Contact Us', new_contact_support_path %>
+            </li>
+            <li class="mobile-menu-item col-12 d-flex align-items-center">
+              <% if user_signed_in? %>
+                <%= link_to 'Sign out', destroy_user_session_path, method: :delete %>
+              <% else %>
+                <%= link_to 'Sign in', new_user_session_path %>  
+              <% end %>
+            </li>
+          </ul>
+        </div>
+      </section>
+      
+      <%= yield %>
+
+      <% unless controller_name == 'conversations' %>
+        <section class="footer">
+          <div class="spacer20"></div>
+          <section class="footer-text">
+            <h2>
+              ABOUT COMIC CULTURE
+            </h2>
+            <div class="spacer20"></div>
+            <p>
+              Comic Culture is a community-oriented two-sided marketplace for pop culture enthusasts. The main target market for this marketplace are comic book or graphic novel readers/hobbyist, toy collectors/makers, costume makers/cosplayers, and clothing/apparel collectors/enthusiasts.
+            </p>
+            <div class="spacer20"></div>
+            <p>
+              Comic Culture is currently growing in popularity as the movie and television industry has been using comic-based characters and stories for their shows. As such, there is also an increase in popularity among comic books, graphic novels, toys, collectables, costumes, clothing and other apparel. However, most online stores that sell these products only sell brand new items. As such the community has been relying on generic two-sided marketplaces such as eBay or gumtree which does not have the expertise or speciality of an online comic culture community who are much familiar with these products.
+            </p>
+            <div class="spacer20"></div>
+            <p>
+              A community-oriented two-sided marketplace creates an atmosphere of expertise and enthusiasm among comic culture buyers and hobbyists. It will not only provide ample feedback to sellers, but it will also incorporate better prices for buyers as they are guided by a specialised community.
+            </p>
+          </section>
+        </section>
+        <section class="footer-links row align-items-start">
+          <div class="information col col-md-3">
+            <h2>Information</h2>
+            <ul>
+              <li>
+                <a href="#">About Us</a>
+              </li>
+              <li>
+                <a href="#">Staff</a>
+              </li>
+              <li>
+                <a href="#">Terms and Conditions</a>
+              </li>
+              <li>
+                <a href="#">Shipping and Returns</a>
+              </li>
+              <li>
+                <a href="#">Privacy Policy</a>
+              </li>
+            </ul>
+          </div>
+          <div class="myaccount col col-md-3">
+            <h2>My Account</h2>
+            <ul>
+              <% if !user_signed_in? %>
+                <li>
+                  <%= link_to 'Sign in', new_user_session_path %>
+                </li>
+                <li>
+                  <%= link_to 'Create', new_user_registration_path %>
+                </li>
+              <% else %>
+                <li>
+                  <%= link_to 'Manage Account', edit_user_registration_path %>
+                </li>
+                <% if current_user.profile.present? %>
+                <li>
+                  <%= link_to 'Manage Profile', edit_profile_path(current_user.profile) unless current_user.profile.blank? %>
+                </li>
+                <% end %>
+                <li>
+                  <%= link_to 'Sign out', destroy_user_session_path, method: :delete %>
+                </li>
+              <% end %>
+              <% if !user_signed_in? %>
+                <li>
+                  <%= link_to "Forgot your password?", new_user_password_path %>
+                </li>
+              <% end %>
+              <li>
+                <%= link_to 'Shopping Cart', shopping_carts_path %>
+              </li>
+              <li>
+                <%= link_to 'Watchlist', watchlists_path %>
+              </li>
+            </ul>
+          </div>
+          <div class="social col col-md-3">
+            <h2>Social Media</h2>
+            <ul>
+              <li>
+                <a href="https://facebook.com">Facebook</a>
+              </li>
+              <li>
+                <a href="https://twitter.com">Twitter</a>
+              </li>
+              <li>
+                <a href="https://instagram.com">Instagram</a>
+              </li>
+              <li>
+                <a href="https://plus.google.com">Google Plus</a>
+              </li>
+            </ul>
+          </div>
+          <div class="help col col-md-3">
+            <h2>Help</h2>
+            <ul>
+              <li>
+                <%= link_to 'Contact Us', new_contact_support_path %>
+              </li>
+              <li>
+                <a href="#">FAQ</a>
+              </li>
+            </ul>
+          </div>
+        </section>
+      <% end %>
+    </div>
+    
+    <script>
+      $( ".hamburger-link" ).click(function() {
+        $( "#mobile-menu" ).toggleClass( "mobile-menu-show" );
+        return false;
+      });
+      $( ".close-button" ).click(function() {
+        $( "#mobile-menu" ).removeClass( "mobile-menu-show" );
+        return false;
+      });
+    </script>
+  </body>
+</html>

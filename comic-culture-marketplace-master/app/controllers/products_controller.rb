@@ -1,0 +1,148 @@
+class ProductsController < ApplicationController
+  before_action :set_profile!
+  before_action :authenticate_user!, only: [:new, :create, :edit, :update, :destroy]
+  before_action :set_product, only: [:show, :edit, :update, :destroy]
+  before_action :set_product_containers, only: [:index, :books, :toys, :costumes, :apparel, :top_products]
+  # GET /products
+  # GET /products.json
+  def index
+    # @products = Product.all
+
+    # Latest additions - Last 12 new products
+    @latest_products = Product.where(status: 'Available').order(created_at: :desc).limit(12)
+
+    # Rcently sold - Last 12 sold products
+    @sold_products = Product.where(status: 'Sold').order(updated_at: :desc).limit(12)
+
+    # Top 12 viewed products
+    # @top_products = Product.where(status: 'Available').sort_by(&:view_count).reverse[0,12]
+    @top_products = Product.top_products(12)
+
+    # Carousel Images
+    # @carousel = Photo.limit(5).order("RANDOM()")
+  end
+  
+  # GET /products/1
+  # GET /products/1.json
+  def show
+    # Toggle product view if user has not already viewed the product
+    @product.toggle_viewed_by(current_user)
+
+    # Top Customer Review
+    @top_customer_reviews = @product.seller.top_customer_reviews
+
+    # Initialise a new shopping cart item
+    @shopping_cart = ShoppingCart.new
+    # Initialise a new watchlist item
+    @watchlist = Watchlist.new
+  end
+
+  # GET /products/new
+  def new
+    @product = Product.new
+  end
+
+  # GET /products/1/edit
+  def edit
+  end
+
+  # POST /products
+  # POST /products.json
+  def create
+    @product = Product.new(product_params)
+    @product.seller = current_user
+    @product.status = 'Available'
+
+    respond_to do |format|
+      if @product.save
+        # Get photos directly from the params and save them to the database one by one
+        if params[:product][:images]
+          params[:product][:images].each { |image|
+            Photo.create(product: @product, image: image)
+          }
+        end
+
+        format.html { redirect_to @product, notice: 'Product was successfully created.' }
+        format.json { render :show, status: :created, location: @product }
+      else
+        format.html { render :new }
+        format.json { render json: @product.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # PATCH/PUT /products/1
+  # PATCH/PUT /products/1.json
+  def update
+    respond_to do |format|
+      if @product.update(product_params)
+        # Get photos directly from the params and save them to the database one by one
+        if params[:product][:images]
+          params[:product][:images].each { |image|
+            Photo.create(product: @product, image: image)
+          }
+        end
+
+        format.html { redirect_to @product, notice: 'Product was successfully updated.' }
+        format.json { render :show, status: :ok, location: @product }
+      else
+        format.html { render :edit }
+        format.json { render json: @product.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # DELETE /products/1
+  # DELETE /products/1.json
+  def destroy
+    @product.destroy
+    respond_to do |format|
+      format.html { redirect_to products_url, notice: 'Product was successfully destroyed.' }
+      format.json { head :no_content }
+    end
+  end
+
+  # Product category - Comic Books & Graphic Novels
+  def books
+    @products = Product.category('Comic Books & Graphic Novels')
+  end
+
+  # Product category - Toys & Collectibles
+  def toys
+    @products = Product.category('Toys & Collectibles')
+  end
+
+  # Product category - Costumes
+  def costumes
+    @products = Product.category('Costumes')
+  end
+
+  # Product category - Clothing & Apparel
+  def apparel
+    @products = Product.category('Clothing & Apparel')
+  end
+  
+  private
+    # Use callbacks to share common setup or constraints between actions.
+    def set_product
+      @product = Product.find(params[:id])
+      authorize @product
+    rescue Pundit::NotAuthorizedError => e
+      render :unauthorized
+    end
+
+    # Never trust parameters from the scary internet, only allow the white list through.
+    def product_params
+      params.require(:product).permit(:seller_id, :name, :price, :description, :condition, :status, :category, :manufacturer, :publisher, :publish_date, :author, :illustrator, :isbn_10, :isbn_13, :dimensions, :weight, :keywords, :postage)
+    end
+
+    # Initialise the shopping cart and watchlist
+    def set_product_containers
+      # Add to Cart buttons in product listing
+      @shopping_cart = ShoppingCart.new
+  
+      # Add to Watchlist buttons
+      @watchlist = Watchlist.new
+    end
+
+end
